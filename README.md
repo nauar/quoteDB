@@ -21,8 +21,8 @@ Open `http://localhost:8000`.
 ## Running with nerdctl / Docker
 
 ```bash
-nerdctl build -t quoteweb .
-nerdctl run -d -p 8000:8000 -v $(pwd)/db.sqlite:/app/db.sqlite quoteweb
+nerdctl build -t quotedb .
+nerdctl run -d --name quotedb -p 8000:8000 -v $(pwd)/db.sqlite:/app/db.sqlite quotedb
 ```
 
 The database is mounted at runtime so data persists outside the container.

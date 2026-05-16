@@ -7,7 +7,7 @@ import time
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -47,9 +47,9 @@ class Quote(BaseModel):
 
 
 class CreateQuote(BaseModel):
-    nick: str
-    owner: str
-    text: str
+    nick: str = Field(max_length=100)
+    owner: str = Field(max_length=100)
+    text: str = Field(max_length=2000)
 
 
 class QuotesResponse(BaseModel):
@@ -61,8 +61,10 @@ class QuotesResponse(BaseModel):
 
 
 @app.get("/api/quotes", response_model=QuotesResponse)
+@limiter.limit("30/minute")
 def list_quotes(
-    q: str = Query(default="", description="Search term"),
+    request: Request,
+    q: str = Query(default="", max_length=200),
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
 ):

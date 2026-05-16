@@ -178,6 +178,24 @@ randomAgainBtn.addEventListener('click', loadRandomQuote);
 randomModal.addEventListener('click', (e) => { if (e.target === randomModal) closeRandomModal(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !randomModal.hidden) closeRandomModal(); });
 
+// Char counters
+function initCharCounter(inputId, counterId, max) {
+    const input = document.getElementById(inputId);
+    const counter = document.getElementById(counterId);
+    function update() {
+        const left = max - input.value.length;
+        counter.textContent = `${left} char${left !== 1 ? 's' : ''} left`;
+        counter.classList.toggle('char-counter--warning', left <= max * 0.2 && left > max * 0.1);
+        counter.classList.toggle('char-counter--danger', left <= max * 0.1);
+    }
+    input.addEventListener('input', update);
+    return update;
+}
+
+const resetNickCounter = initCharCounter('q-nick', 'nick-counter', 100);
+const resetOwnerCounter = initCharCounter('q-owner', 'owner-counter', 100);
+const resetTextCounter = initCharCounter('q-text', 'text-counter', 2000);
+
 // Add quote modal
 const modal = document.getElementById('add-modal');
 const addQuoteBtn = document.getElementById('add-quote-btn');
@@ -189,6 +207,9 @@ const addError = document.getElementById('add-error');
 function openModal() {
     addQuoteForm.reset();
     addError.hidden = true;
+    resetNickCounter();
+    resetOwnerCounter();
+    resetTextCounter();
     modal.hidden = false;
     document.getElementById('q-nick').focus();
 }

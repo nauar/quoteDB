@@ -55,13 +55,16 @@
             </div>
             <form id="add-quote-form" class="modal-form">
                 <label for="q-nick">Nick</label>
-                <input type="text" id="q-nick" name="nick" placeholder="e.g. Samual" required>
+                <input type="text" id="q-nick" name="nick" placeholder="e.g. Samual" maxlength="100" required>
+                <span class="char-counter" id="nick-counter">100 chars left</span>
 
                 <label for="q-owner">Added by</label>
-                <input type="text" id="q-owner" name="owner" placeholder="e.g. zykure" required>
+                <input type="text" id="q-owner" name="owner" placeholder="e.g. zykure" maxlength="100" required>
+                <span class="char-counter" id="owner-counter">100 chars left</span>
 
                 <label for="q-text">Quote</label>
-                <textarea id="q-text" name="text" rows="5" placeholder="Quote text…" required></textarea>
+                <textarea id="q-text" name="text" rows="5" placeholder="Quote text…" maxlength="2000" required></textarea>
+                <span class="char-counter" id="text-counter">2000 chars left</span>
 
                 <div id="add-error" class="form-error" hidden></div>
 
@@ -76,7 +79,7 @@
     <main>
         <div class="container">
             <div class="search-section">
-                <input type="text" id="search" class="search-input" placeholder="Search quotes...">
+                <input type="text" id="search" class="search-input" placeholder="Search quotes..." maxlength="200">
             </div>
 
             <div id="results-info" class="results-info"></div>

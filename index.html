@@ -33,6 +33,22 @@
         </div>
     </header>
 
+    <div id="quote-modal" class="modal-backdrop" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="quote-modal-title">
+            <div class="modal-header">
+                <h2 id="quote-modal-title">Quote</h2>
+                <button id="quote-modal-close" class="modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div id="quote-modal-content" class="random-quote-content"></div>
+            <div class="modal-footer" style="padding: 0 28px 28px;">
+                <button id="quote-modal-copy" class="btn-secondary">Copy link</button>
+                <button id="quote-modal-done" class="btn-primary">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
+
     <div id="random-modal" class="modal-backdrop" hidden>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="random-modal-title">
             <div class="modal-header">

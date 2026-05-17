@@ -37,6 +37,7 @@ const searchInput = document.getElementById('search');
 
 let currentPage = 1;
 let currentQuery = '';
+let currentNick = '';
 const PER_PAGE = 20;
 
 function formatDate(unixTs) {
@@ -45,21 +46,24 @@ function formatDate(unixTs) {
     });
 }
 
+function quoteCardHtml(q) {
+    return `
+        <div class="quote-card">
+            <blockquote class="quote-text">${escapeHtml(q.text).replace(/ \| /g, '<br>')}</blockquote>
+            <div class="quote-meta">
+                <span class="quote-author">— <button class="nick-btn" data-nick="${escapeHtml(q.nick)}">${escapeHtml(q.nick)}</button></span>
+                <span class="quote-details">added by ${escapeHtml(q.owner)} &middot; ${formatDate(q.time)} &middot; <button class="quote-id-btn" data-id="${q.id}">#${q.id}</button></span>
+            </div>
+        </div>
+    `;
+}
+
 function renderQuotes(quotes) {
     if (quotes.length === 0) {
         container.innerHTML = '<p class="no-results">No quotes found.</p>';
         return;
     }
-
-    container.innerHTML = quotes.map(q => `
-        <div class="quote-card">
-            <blockquote class="quote-text">${escapeHtml(q.text).replace(/ \| /g, '<br>')}</blockquote>
-            <div class="quote-meta">
-                <span class="quote-author">— ${escapeHtml(q.nick)}</span>
-                <span class="quote-details">added by ${escapeHtml(q.owner)} &middot; ${formatDate(q.time)} &middot; #${q.id}</span>
-            </div>
-        </div>
-    `).join('');
+    container.innerHTML = quotes.map(quoteCardHtml).join('');
 }
 
 function renderPagination(page, pages) {
@@ -96,9 +100,10 @@ function visiblePageRange(current, total) {
     return [...range].sort((a, b) => a - b);
 }
 
-async function fetchQuotes(page, query) {
+async function fetchQuotes(page, query, nick) {
     const params = new URLSearchParams({ page, per_page: PER_PAGE });
     if (query) params.set('q', query);
+    if (nick) params.set('nick', nick);
 
     container.innerHTML = '<p class="loading">Loading...</p>';
     resultsInfo.textContent = '';
@@ -110,32 +115,128 @@ async function fetchQuotes(page, query) {
 
         renderQuotes(data.quotes);
         renderPagination(data.page, data.pages);
-        resultsInfo.textContent = query
-            ? `${data.total} result${data.total !== 1 ? 's' : ''} for "${query}"`
-            : `${data.total} quotes`;
+        if (nick) {
+            resultsInfo.innerHTML = `${data.total} quote${data.total !== 1 ? 's' : ''} by <strong>${escapeHtml(nick)}</strong> <button id="clear-nick" class="clear-filter-btn">&times; clear</button>`;
+            document.getElementById('clear-nick').addEventListener('click', clearNickFilter);
+        } else if (query) {
+            resultsInfo.textContent = `${data.total} result${data.total !== 1 ? 's' : ''} for "${query}"`;
+        } else {
+            resultsInfo.textContent = `${data.total} quotes`;
+        }
     } catch (err) {
         container.innerHTML = `<p class="no-results">Failed to load quotes: ${escapeHtml(err.message)}</p>`;
         pagination.innerHTML = '';
     }
 }
 
+function clearNickFilter() {
+    currentNick = '';
+    currentPage = 1;
+    fetchQuotes(currentPage, currentQuery, currentNick);
+}
+
 pagination.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-page]');
     if (!btn || btn.disabled) return;
     currentPage = parseInt(btn.dataset.page, 10);
-    fetchQuotes(currentPage, currentQuery);
+    fetchQuotes(currentPage, currentQuery, currentNick);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+container.addEventListener('click', (e) => {
+    const nickBtn = e.target.closest('.nick-btn');
+    if (nickBtn) {
+        currentNick = nickBtn.dataset.nick;
+        currentPage = 1;
+        currentQuery = '';
+        searchInput.value = '';
+        fetchQuotes(currentPage, currentQuery, currentNick);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+
+    const idBtn = e.target.closest('.quote-id-btn');
+    if (idBtn) {
+        openQuoteModal(parseInt(idBtn.dataset.id, 10));
+    }
 });
 
 let debounceTimer;
 searchInput.addEventListener('input', (e) => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
+        currentNick = '';
         currentQuery = e.target.value.trim();
         currentPage = 1;
-        fetchQuotes(currentPage, currentQuery);
+        fetchQuotes(currentPage, currentQuery, currentNick);
     }, 300);
 });
+
+// Quote detail modal
+const quoteModal = document.getElementById('quote-modal');
+const quoteModalTitle = document.getElementById('quote-modal-title');
+const quoteModalContent = document.getElementById('quote-modal-content');
+const quoteModalClose = document.getElementById('quote-modal-close');
+const quoteModalDone = document.getElementById('quote-modal-done');
+const quoteModalCopy = document.getElementById('quote-modal-copy');
+
+function closeQuoteModal() {
+    quoteModal.hidden = true;
+    const url = new URL(window.location);
+    url.searchParams.delete('quote');
+    history.replaceState(null, '', url);
+}
+
+async function openQuoteModal(id) {
+    quoteModal.hidden = false;
+    quoteModalTitle.textContent = `Quote #${id}`;
+    quoteModalContent.innerHTML = '<p class="loading">Loading...</p>';
+
+    const url = new URL(window.location);
+    url.searchParams.set('quote', id);
+    history.replaceState(null, '', url);
+
+    try {
+        const res = await fetch(`/api/quotes/${id}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const q = await res.json();
+        quoteModalContent.innerHTML = `
+            <div class="random-quote-body">
+                <blockquote class="quote-text">${escapeHtml(q.text).replace(/ \| /g, '<br>')}</blockquote>
+                <div class="quote-meta">
+                    <span class="quote-author">— ${escapeHtml(q.nick)}</span>
+                    <span class="quote-details">added by ${escapeHtml(q.owner)} &middot; ${formatDate(q.time)}</span>
+                </div>
+            </div>`;
+    } catch (err) {
+        quoteModalContent.innerHTML = `<p class="no-results">Failed to load: ${escapeHtml(err.message)}</p>`;
+    }
+}
+
+quoteModalClose.addEventListener('click', closeQuoteModal);
+quoteModalDone.addEventListener('click', closeQuoteModal);
+quoteModal.addEventListener('click', (e) => { if (e.target === quoteModal) closeQuoteModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !quoteModal.hidden) closeQuoteModal(); });
+
+quoteModalCopy.addEventListener('click', () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+        showToast('Link copied!');
+    });
+});
+
+// Toast
+const toast = document.getElementById('toast');
+let toastTimer;
+function showToast(msg) {
+    toast.textContent = msg;
+    toast.hidden = false;
+    toast.classList.add('toast--visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        toast.classList.remove('toast--visible');
+        setTimeout(() => { toast.hidden = true; }, 300);
+    }, 2000);
+}
 
 // Random quote modal
 const randomModal = document.getElementById('random-modal');
@@ -251,8 +352,9 @@ addQuoteForm.addEventListener('submit', async (e) => {
         closeModal();
         currentPage = 1;
         currentQuery = '';
+        currentNick = '';
         searchInput.value = '';
-        fetchQuotes(currentPage, currentQuery);
+        fetchQuotes(currentPage, currentQuery, currentNick);
     } catch (err) {
         addError.textContent = err.message;
         addError.hidden = false;
@@ -270,4 +372,10 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-fetchQuotes(currentPage, currentQuery);
+// Handle ?quote=ID on page load
+const initialQuoteId = new URLSearchParams(window.location.search).get('quote');
+if (initialQuoteId) {
+    openQuoteModal(parseInt(initialQuoteId, 10));
+}
+
+fetchQuotes(currentPage, currentQuery, currentNick);

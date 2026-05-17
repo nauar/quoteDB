@@ -49,9 +49,9 @@ function formatDate(unixTs) {
 function quoteCardHtml(q) {
     return `
         <div class="quote-card">
-            <blockquote class="quote-text">${escapeHtml(q.text).replace(/ \| /g, '<br>')}</blockquote>
+            <blockquote class="quote-text">${highlight(q.text, currentQuery).replace(/ \| /g, '<br>')}</blockquote>
             <div class="quote-meta">
-                <span class="quote-author">— <button class="nick-btn" data-nick="${escapeHtml(q.nick)}">${escapeHtml(q.nick)}</button></span>
+                <span class="quote-author">— <button class="nick-btn" data-nick="${escapeHtml(q.nick)}">${highlight(q.nick, currentQuery)}</button></span>
                 <span class="quote-details">added by ${escapeHtml(q.owner)} &middot; ${formatDate(q.time)} &middot; <button class="quote-id-btn" data-id="${q.id}">#${q.id}</button></span>
             </div>
         </div>
@@ -402,6 +402,16 @@ function escapeHtml(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+}
+
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlight(str, query) {
+    const escaped = escapeHtml(str);
+    if (!query) return escaped;
+    return escaped.replace(new RegExp(escapeRegex(escapeHtml(query)), 'gi'), '<mark>$&</mark>');
 }
 
 // Handle ?quote=ID on page load

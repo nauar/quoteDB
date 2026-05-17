@@ -219,10 +219,24 @@ quoteModal.addEventListener('click', (e) => { if (e.target === quoteModal) close
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !quoteModal.hidden) closeQuoteModal(); });
 
 quoteModalCopy.addEventListener('click', () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-        showToast('Link copied!');
-    });
+    const url = window.location.href;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => showToast('Link copied!')).catch(() => fallbackCopy(url));
+    } else {
+        fallbackCopy(url);
+    }
 });
+
+function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast(ok ? 'Link copied!' : 'Copy failed — copy the URL from the address bar');
+}
 
 // Toast
 const toast = document.getElementById('toast');

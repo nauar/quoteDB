@@ -6,7 +6,7 @@ A web UI for browsing an IRC quote database backed by SQLite.
 
 - **Backend**: Python / FastAPI + uvicorn
 - **Frontend**: Vanilla HTML/CSS/JS
-- **Database**: SQLite with FTS4 full-text search
+- **Database**: SQLite
 - **Deps**: managed by [uv](https://github.com/astral-sh/uv)
 
 ## Running locally
@@ -40,7 +40,8 @@ The database is mounted at runtime so data persists outside the container.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `q` | — | Full-text search term |
+| `q` | — | Search term (case-insensitive substring match on nick and text) |
+| `nick` | — | Filter by exact nick (case-insensitive) |
 | `page` | `1` | Page number |
 | `per_page` | `20` | Results per page (max 100) |
 
@@ -86,4 +87,4 @@ The relevant table is `quotesdb`:
 | `time` | INTEGER | Unix timestamp |
 | `text` | TEXT | Quote content |
 
-Full-text search is provided by the `quotesdb_fts` FTS4 virtual table over `nick` and `text`.
+Multi-line quotes are stored as a single text field with lines separated by ` | ` (space-pipe-space), which the web UI renders as line breaks.

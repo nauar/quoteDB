@@ -184,6 +184,18 @@ container.addEventListener('click', (e) => {
     }
 });
 
+document.addEventListener('keydown', (e) => {
+    if (e.key !== '/') return;
+    if (document.activeElement === searchInput) return;
+    const anyModalOpen = !document.getElementById('quote-modal').hidden ||
+                         !document.getElementById('random-modal').hidden ||
+                         !document.getElementById('add-modal').hidden;
+    if (anyModalOpen) return;
+    e.preventDefault();
+    searchInput.focus();
+    searchInput.select();
+});
+
 let debounceTimer;
 searchInput.addEventListener('input', (e) => {
     clearTimeout(debounceTimer);

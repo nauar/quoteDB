@@ -35,10 +35,32 @@ const pagination = document.getElementById('pagination');
 const resultsInfo = document.getElementById('results-info');
 const searchInput = document.getElementById('search');
 
-let currentPage = 1;
-let currentQuery = '';
-let currentNick = '';
 const PER_PAGE = 20;
+
+function readListState() {
+    const p = new URLSearchParams(window.location.search);
+    return {
+        page: Math.max(1, parseInt(p.get('page') || '1', 10)),
+        query: p.get('q') || '',
+        nick: p.get('nick') || '',
+    };
+}
+
+const _init = readListState();
+let currentPage = _init.page;
+let currentQuery = _init.query;
+let currentNick = _init.nick;
+
+function pushListState(page, query, nick) {
+    const url = new URL(window.location);
+    url.searchParams.delete('page');
+    url.searchParams.delete('q');
+    url.searchParams.delete('nick');
+    if (page > 1) url.searchParams.set('page', page);
+    if (query) url.searchParams.set('q', query);
+    if (nick) url.searchParams.set('nick', nick);
+    history.pushState({ page, query, nick }, '', url);
+}
 
 function formatDate(unixTs) {
     return new Date(unixTs * 1000).toLocaleDateString(undefined, {
@@ -100,7 +122,8 @@ function visiblePageRange(current, total) {
     return [...range].sort((a, b) => a - b);
 }
 
-async function fetchQuotes(page, query, nick) {
+async function fetchQuotes(page, query, nick, skipPush) {
+    if (!skipPush) pushListState(page, query, nick);
     const params = new URLSearchParams({ page, per_page: PER_PAGE });
     if (query) params.set('q', query);
     if (nick) params.set('nick', nick);
@@ -414,10 +437,22 @@ function highlight(str, query) {
     return escaped.replace(new RegExp(escapeRegex(escapeHtml(query)), 'gi'), '<mark>$&</mark>');
 }
 
+window.addEventListener('popstate', () => {
+    const s = readListState();
+    currentPage = s.page;
+    currentQuery = s.query;
+    currentNick = s.nick;
+    searchInput.value = currentQuery;
+    fetchQuotes(currentPage, currentQuery, currentNick, true);
+});
+
 // Handle ?quote=ID on page load
 const initialQuoteId = new URLSearchParams(window.location.search).get('quote');
 if (initialQuoteId) {
     openQuoteModal(parseInt(initialQuoteId, 10));
 }
 
-fetchQuotes(currentPage, currentQuery, currentNick);
+// Sync search input with URL state on load
+if (currentQuery) searchInput.value = currentQuery;
+
+fetchQuotes(currentPage, currentQuery, currentNick, true);

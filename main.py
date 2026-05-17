@@ -60,12 +60,6 @@ class QuotesResponse(BaseModel):
     pages: int
 
 
-def _fts_query(q: str) -> str:
-    """Wrap each whitespace-separated token in double-quotes for safe FTS4 MATCH."""
-    tokens = [t.replace('"', '') for t in q.split() if t]
-    return ' '.join(f'"{t}"' for t in tokens) if tokens else '""'
-
-
 @app.get("/api/quotes", response_model=QuotesResponse)
 @limiter.limit("30/minute")
 def list_quotes(
@@ -92,40 +86,19 @@ def list_quotes(
                 (nick,),
             ).fetchone()[0]
         elif q:
-            fts_q = _fts_query(q)
-            try:
-                rows = conn.execute(
-                    """
-                    SELECT q.id, q.nick, q.owner, q.time, q.text
-                    FROM quotesdb q
-                    JOIN quotesdb_fts fts ON q.rowid = fts.rowid
-                    WHERE quotesdb_fts MATCH ?
-                    LIMIT ? OFFSET ?
-                    """,
-                    (fts_q, per_page, offset),
-                ).fetchall()
-                total = conn.execute(
-                    """
-                    SELECT COUNT(*) FROM quotesdb q
-                    JOIN quotesdb_fts fts ON q.rowid = fts.rowid
-                    WHERE quotesdb_fts MATCH ?
-                    """,
-                    (fts_q,),
-                ).fetchone()[0]
-            except sqlite3.OperationalError:
-                like_q = f"%{q}%"
-                rows = conn.execute(
-                    """
-                    SELECT id, nick, owner, time, text FROM quotesdb
-                    WHERE LOWER(nick) LIKE LOWER(?) OR LOWER(text) LIKE LOWER(?)
-                    ORDER BY id DESC LIMIT ? OFFSET ?
-                    """,
-                    (like_q, like_q, per_page, offset),
-                ).fetchall()
-                total = conn.execute(
-                    "SELECT COUNT(*) FROM quotesdb WHERE LOWER(nick) LIKE LOWER(?) OR LOWER(text) LIKE LOWER(?)",
-                    (like_q, like_q),
-                ).fetchone()[0]
+            like_q = f"%{q}%"
+            rows = conn.execute(
+                """
+                SELECT id, nick, owner, time, text FROM quotesdb
+                WHERE LOWER(nick) LIKE LOWER(?) OR LOWER(text) LIKE LOWER(?)
+                ORDER BY id DESC LIMIT ? OFFSET ?
+                """,
+                (like_q, like_q, per_page, offset),
+            ).fetchall()
+            total = conn.execute(
+                "SELECT COUNT(*) FROM quotesdb WHERE LOWER(nick) LIKE LOWER(?) OR LOWER(text) LIKE LOWER(?)",
+                (like_q, like_q),
+            ).fetchone()[0]
         else:
             rows = conn.execute(
                 "SELECT id, nick, owner, time, text FROM quotesdb ORDER BY id DESC LIMIT ? OFFSET ?",

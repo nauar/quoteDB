@@ -257,14 +257,19 @@ const randomModal = document.getElementById('random-modal');
 const randomQuoteBtn = document.getElementById('random-quote-btn');
 const randomModalClose = document.getElementById('random-modal-close');
 const randomModalDone = document.getElementById('random-modal-done');
+const randomModalCopy = document.getElementById('random-modal-copy');
 const randomAgainBtn = document.getElementById('random-again-btn');
 const randomQuoteContent = document.getElementById('random-quote-content');
 
 function closeRandomModal() {
     randomModal.hidden = true;
+    const url = new URL(window.location);
+    url.searchParams.delete('quote');
+    history.replaceState(null, '', url);
 }
 
 async function loadRandomQuote() {
+    randomModalCopy.disabled = true;
     randomQuoteContent.innerHTML = '<p class="loading">Loading...</p>';
     try {
         const res = await fetch('/api/quotes/random/one');
@@ -278,6 +283,10 @@ async function loadRandomQuote() {
                     <span class="quote-details">added by ${escapeHtml(q.owner)} &middot; ${formatDate(q.time)} &middot; #${q.id}</span>
                 </div>
             </div>`;
+        const url = new URL(window.location);
+        url.searchParams.set('quote', q.id);
+        history.replaceState(null, '', url);
+        randomModalCopy.disabled = false;
     } catch (err) {
         randomQuoteContent.innerHTML = `<p class="no-results">Failed to load: ${escapeHtml(err.message)}</p>`;
     }
@@ -292,6 +301,15 @@ randomModalDone.addEventListener('click', closeRandomModal);
 randomAgainBtn.addEventListener('click', loadRandomQuote);
 randomModal.addEventListener('click', (e) => { if (e.target === randomModal) closeRandomModal(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !randomModal.hidden) closeRandomModal(); });
+
+randomModalCopy.addEventListener('click', () => {
+    const url = window.location.href;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => showToast('Link copied!')).catch(() => fallbackCopy(url));
+    } else {
+        fallbackCopy(url);
+    }
+});
 
 // Char counters
 function initCharCounter(inputId, counterId, max) {

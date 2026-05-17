@@ -86,17 +86,18 @@ def list_quotes(
                 (nick,),
             ).fetchone()[0]
         elif q:
-            like_q = f"%{q}%"
+            escaped = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            like_q = f"%{escaped}%"
             rows = conn.execute(
                 """
                 SELECT id, nick, owner, time, text FROM quotesdb
-                WHERE LOWER(nick) LIKE LOWER(?) OR LOWER(text) LIKE LOWER(?)
+                WHERE LOWER(nick) LIKE LOWER(?) ESCAPE '\\' OR LOWER(text) LIKE LOWER(?) ESCAPE '\\'
                 ORDER BY id DESC LIMIT ? OFFSET ?
                 """,
                 (like_q, like_q, per_page, offset),
             ).fetchall()
             total = conn.execute(
-                "SELECT COUNT(*) FROM quotesdb WHERE LOWER(nick) LIKE LOWER(?) OR LOWER(text) LIKE LOWER(?)",
+                "SELECT COUNT(*) FROM quotesdb WHERE LOWER(nick) LIKE LOWER(?) ESCAPE '\\' OR LOWER(text) LIKE LOWER(?) ESCAPE '\\'",
                 (like_q, like_q),
             ).fetchone()[0]
         else:

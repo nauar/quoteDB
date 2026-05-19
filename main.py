@@ -1,3 +1,4 @@
+import logging
 import os
 import sqlite3
 from contextlib import contextmanager
@@ -13,6 +14,12 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+logging.basicConfig(
+    level=os.environ.get("QUOTEDB_LOG_LEVEL", "INFO"),
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+logger = logging.getLogger("quotedb")
+
 DB_PATH = Path(__file__).parent / "quotes.db"
 
 allowed_origins = [
@@ -21,9 +28,18 @@ allowed_origins = [
 
 limiter = Limiter(key_func=get_remote_address)
 
+
+def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    logger.warning(
+        "rate_limit_exceeded ip=%s method=%s path=%s",
+        get_remote_address(request), request.method, request.url.path,
+    )
+    return _rate_limit_exceeded_handler(request, exc)
+
+
 app = FastAPI(title="QuoteDB")
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -136,6 +152,10 @@ def create_quote(request: Request, body: CreateQuote):
             (cur.lastrowid,),
         ).fetchone()
 
+    logger.info(
+        "quote_created id=%s nick=%r owner=%r ip=%s",
+        row["id"], row["nick"], row["owner"], get_remote_address(request),
+    )
     return Quote(**dict(row))
 
 

@@ -32,6 +32,7 @@ The database is mounted at runtime so data persists outside the container.
 | Env var | Default | Description |
 |---------|---------|-------------|
 | `QUOTEDB_ALLOWED_ORIGINS` | `*` | Comma-separated list of origins allowed by CORS. Set to your frontend URL in production (e.g. `https://quotes.example.com`). |
+| `QUOTEDB_LOG_LEVEL` | `INFO` | Python log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). |
 
 ## API
 

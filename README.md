@@ -9,6 +9,14 @@ A web UI for browsing an IRC quote database backed by SQLite.
 - **Database**: SQLite
 - **Deps**: managed by [uv](https://github.com/astral-sh/uv)
 
+## Fresh install
+
+Bootstrap an empty database:
+
+```bash
+sqlite3 quotes.db < create_schema.sql
+```
+
 ## Running locally
 
 ```bash

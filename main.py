@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -12,7 +13,11 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-DB_PATH = Path(__file__).parent / "db.sqlite"
+DB_PATH = Path(__file__).parent / "quotes.db"
+
+allowed_origins = [
+    o.strip() for o in os.environ.get("QUOTEDB_ALLOWED_ORIGINS", "*").split(",") if o.strip()
+]
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -22,7 +27,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
@@ -124,10 +129,6 @@ def create_quote(request: Request, body: CreateQuote):
         cur = conn.execute(
             "INSERT INTO quotesdb (nick, owner, time, text) VALUES (?, ?, ?, ?)",
             (body.nick.strip(), body.owner.strip(), ts, body.text.strip()),
-        )
-        conn.execute(
-            "INSERT INTO quotesdb_fts (rowid, nick, text) VALUES (?, ?, ?)",
-            (cur.lastrowid, body.nick.strip(), body.text.strip()),
         )
         conn.commit()
         row = conn.execute(

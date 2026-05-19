@@ -22,10 +22,16 @@ Open `http://localhost:8000`.
 
 ```bash
 nerdctl build -t quotedb .
-nerdctl run -d --name quotedb -p 8000:8000 -v $(pwd)/db.sqlite:/app/db.sqlite quotedb
+nerdctl run -d --name quotedb -p 8000:8000 -v $(pwd)/quotes.db:/app/quotes.db quotedb
 ```
 
 The database is mounted at runtime so data persists outside the container.
+
+## Configuration
+
+| Env var | Default | Description |
+|---------|---------|-------------|
+| `QUOTEDB_ALLOWED_ORIGINS` | `*` | Comma-separated list of origins allowed by CORS. Set to your frontend URL in production (e.g. `https://quotes.example.com`). |
 
 ## API
 
@@ -87,4 +93,4 @@ The relevant table is `quotesdb`:
 | `time` | INTEGER | Unix timestamp |
 | `text` | TEXT | Quote content |
 
-Multi-line quotes are stored as a single text field with lines separated by ` | ` (space-pipe-space), which the web UI renders as line breaks.
+Multi-line quotes are stored with `\n` line separators and rendered with CSS `white-space: pre-wrap`.

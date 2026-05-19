@@ -71,7 +71,7 @@ function formatDate(unixTs) {
 function quoteCardHtml(q) {
     return `
         <div class="quote-card">
-            <blockquote class="quote-text">${highlight(q.text, currentQuery).replace(/ \| /g, '<br>')}</blockquote>
+            <blockquote class="quote-text">${highlight(q.text, currentQuery)}</blockquote>
             <div class="quote-meta">
                 <span class="quote-author">— <button class="nick-btn" data-nick="${escapeHtml(q.nick)}">${highlight(q.nick, currentQuery)}</button></span>
                 <span class="quote-details">added by ${escapeHtml(q.owner)} &middot; ${formatDate(q.time)} &middot; <button class="quote-id-btn" data-id="${q.id}">#${q.id}</button></span>
@@ -237,7 +237,7 @@ async function openQuoteModal(id) {
         const q = await res.json();
         quoteModalContent.innerHTML = `
             <div class="random-quote-body">
-                <blockquote class="quote-text">${escapeHtml(q.text).replace(/ \| /g, '<br>')}</blockquote>
+                <blockquote class="quote-text">${escapeHtml(q.text)}</blockquote>
                 <div class="quote-meta">
                     <span class="quote-author">— ${escapeHtml(q.nick)}</span>
                     <span class="quote-details">added by ${escapeHtml(q.owner)} &middot; ${formatDate(q.time)}</span>
@@ -312,7 +312,7 @@ async function loadRandomQuote() {
         const q = await res.json();
         randomQuoteContent.innerHTML = `
             <div class="random-quote-body">
-                <blockquote class="quote-text">${escapeHtml(q.text).replace(/ \| /g, '<br>')}</blockquote>
+                <blockquote class="quote-text">${escapeHtml(q.text)}</blockquote>
                 <div class="quote-meta">
                     <span class="quote-author">— ${escapeHtml(q.nick)}</span>
                     <span class="quote-details">added by ${escapeHtml(q.owner)} &middot; ${formatDate(q.time)} &middot; #${q.id}</span>

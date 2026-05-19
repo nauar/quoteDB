@@ -231,6 +231,7 @@ main {
     color: var(--text-primary);
     font-weight: 400;
     font-style: italic;
+    white-space: pre-wrap;
 }
 
 .quote-meta {

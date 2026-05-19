@@ -26,6 +26,12 @@ uv run uvicorn main:app --reload
 
 Open `http://localhost:8000`.
 
+## Running tests
+
+```bash
+uv run pytest
+```
+
 ## Running with nerdctl / Docker
 
 ```bash

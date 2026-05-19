@@ -8,3 +8,11 @@ dependencies = [
     "slowapi>=0.1.9",
     "uvicorn>=0.47.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
